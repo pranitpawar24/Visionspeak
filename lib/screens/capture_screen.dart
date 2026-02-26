@@ -21,7 +21,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
   TextRecognizer(script: TextRecognitionScript.latin);
   final FlutterTts _flutterTts = FlutterTts();
 
-  // -------------------- IMAGE PICK --------------------
+  // ---------------- IMAGE PICK ----------------
 
   Future<void> _pickImage(ImageSource source) async {
     final XFile? picked = await _picker.pickImage(source: source);
@@ -39,7 +39,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     }
   }
 
-  // -------------------- OCR PROCESS --------------------
+  // ---------------- OCR PROCESS ----------------
 
   Future<void> _processImage(File imageFile) async {
     final inputImage = InputImage.fromFile(imageFile);
@@ -52,13 +52,19 @@ class _CaptureScreenState extends State<CaptureScreen> {
           : recognizedText.text;
       _isProcessing = false;
     });
+
+    // Auto Speak
+    if (_recognizedText != "No text found in the image.") {
+      await _speakText();
+    }
   }
 
-  // -------------------- TEXT TO SPEECH --------------------
+  // ---------------- TEXT TO SPEECH ----------------
 
   Future<void> _speakText() async {
     if (_recognizedText.isNotEmpty &&
         _recognizedText != "No text found in the image.") {
+      await _flutterTts.stop();
       await _flutterTts.setLanguage("en-US");
       await _flutterTts.setSpeechRate(0.5);
       await _flutterTts.setVolume(1.0);
@@ -71,7 +77,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     await _flutterTts.stop();
   }
 
-  // -------------------- DISPOSE --------------------
+  // ---------------- DISPOSE ----------------
 
   @override
   void dispose() {
@@ -80,7 +86,7 @@ class _CaptureScreenState extends State<CaptureScreen> {
     super.dispose();
   }
 
-  // -------------------- UI --------------------
+  // ---------------- UI ----------------
 
   @override
   Widget build(BuildContext context) {
@@ -93,13 +99,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            if (_image != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(_image!),
-              )
-            else
-              const Text("No image selected"),
+            _image != null
+                ? ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(_image!),
+            )
+                : const Text("No image selected"),
 
             const SizedBox(height: 20),
 
@@ -120,48 +125,53 @@ class _CaptureScreenState extends State<CaptureScreen> {
             ),
 
             const SizedBox(height: 30),
-    const Text(
-    "Recognized Text:",
-    style: TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    ),
-    ),
 
-    const SizedBox(height: 10),
+            if (_isProcessing) const CircularProgressIndicator(),
 
-    Container(
-    padding: const EdgeInsets.all(12),
-    width: double.infinity,
-    decoration: BoxDecoration(
-    border: Border.all(color: Colors.grey),
-    borderRadius: BorderRadius.circular(10),
-    ),
-    child: Text(
-    _recognizedText.isEmpty
-    ? "No text extracted yet."
-        : _recognizedText,
-    style: const TextStyle(fontSize: 16),
-    ),
-    ),
+            const SizedBox(height: 20),
 
-    const SizedBox(height: 20),
+            const Text(
+              "Recognized Text:",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
 
-    Row(
-    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    children: [
-    ElevatedButton.icon(
-    onPressed: _speakText,
-    icon: const Icon(Icons.volume_up),
-    label: const Text("Speak"),
-    ),
-    ElevatedButton.icon(
-    onPressed: _stopSpeaking,
-    icon: const Icon(Icons.stop),
-    label: const Text("Stop"),
-    ),
-    ],
-    ),
+            const SizedBox(height: 10),
+
+            Container(
+              padding: const EdgeInsets.all(12),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                _recognizedText.isEmpty
+                    ? "No text extracted yet."
+                    : _recognizedText,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _speakText,
+                  icon: const Icon(Icons.volume_up),
+                  label: const Text("Speak"),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _stopSpeaking,
+                  icon: const Icon(Icons.stop),
+                  label: const Text("Stop"),
+                ),
+              ],
+            ),
           ],
         ),
       ),
