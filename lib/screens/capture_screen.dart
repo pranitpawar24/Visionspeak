@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-
+import '../services/gemini_service.dart';
 class CaptureScreen extends StatefulWidget {
   const CaptureScreen({super.key});
 
@@ -40,22 +40,30 @@ class _CaptureScreenState extends State<CaptureScreen> {
   }
 
   // ---------------- OCR PROCESS ----------------
-
   Future<void> _processImage(File imageFile) async {
     final inputImage = InputImage.fromFile(imageFile);
-    final RecognizedText recognizedText =
+
+    final recognizedText =
     await _textRecognizer.processImage(inputImage);
 
-    setState(() {
-      _recognizedText = recognizedText.text.isEmpty
-          ? "No text found in the image."
-          : recognizedText.text;
-      _isProcessing = false;
-    });
+    if (recognizedText.text.isNotEmpty) {
+      setState(() {
+        _recognizedText = recognizedText.text;
+        _isProcessing = false;
+      });
 
-    // Auto Speak
-    if (_recognizedText != "No text found in the image.") {
       await _speakText();
+    } else {
+      final description =
+      await GeminiService.describeImage(imageFile);
+
+      setState(() {
+        _recognizedText = description;
+        _isProcessing = false;
+      });
+
+      await _flutterTts.stop();
+      await _flutterTts.speak(description);
     }
   }
 
